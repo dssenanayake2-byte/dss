@@ -756,14 +756,22 @@ p { margin: 0 0 1em; max-width: 68ch; }
 .feature-tile {
   position: relative; aspect-ratio: 4 / 3; border-radius: var(--radius); overflow: hidden;
   border: 1px solid var(--line); background: linear-gradient(135deg, var(--emerald-600), var(--emerald-800));
-  display: flex; align-items: flex-end; padding: 1.25rem; color: var(--white); text-decoration: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.9rem;
+  padding: 1.25rem; color: var(--white); text-align: center; text-decoration: none;
   transition: transform 0.45s var(--ease), border-color 0.35s;
 }
 .feature-tile:hover { transform: translateY(-5px); border-color: var(--gold); color: var(--white); }
 .feature-tile h3 { margin: 0; font-size: 1.2rem; }
 .feature-tile small { display: block; color: var(--text-muted); font-family: var(--font-body); font-size: 0.9rem; margin-top: 0.2rem; }
-.feature-tile::before { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(4,20,15,0.85), transparent 60%); }
-.feature-tile > * { position: relative; }
+.card-image-circle {
+  display: block; flex: 0 0 auto; width: clamp(120px, 36vw, 150px); height: clamp(120px, 36vw, 150px);
+  aspect-ratio: 1 / 1; border-radius: 50%; object-fit: cover; object-position: center;
+}
+.intro-media-card {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem;
+  padding: 1.25rem; background: linear-gradient(145deg, var(--emerald-800), var(--emerald-950));
+}
+.intro-media-caption { text-align: center; }
 .section-cta { margin-top: 2.2rem; }
 
 .values-grid {
@@ -832,6 +840,20 @@ p { margin: 0 0 1em; max-width: 68ch; }
 .activity-item h3 { margin-bottom: 0.3rem; }
 .activity-item time { color: var(--gold); font-size: 0.92rem; display: block; margin-bottom: 0.4rem; }
 .activity-item p { margin: 0; color: var(--text-muted); }
+.club-card, .sport-card { display: flex; flex-direction: column; min-height: 100%; }
+.club-card-logo { display: grid; place-items: center; min-height: 150px; margin: 0 auto 1rem; }
+.club-card-logo img.card-image-circle { width: 130px; height: 130px; }
+.sport-card-logo { display: grid; place-items: center; min-height: 150px; margin: 0 auto 1rem; }
+.sport-card-logo img.card-image-circle { width: 130px; height: 130px; }
+.club-card h3, .sport-card h3 { text-align: center; }
+.club-card .club-card-teacher, .sport-card .club-card-teacher {
+  margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--line); color: var(--gold-soft);
+  font-weight: 600;
+}
+.club-logo-placeholder {
+  display: grid; place-items: center; width: 130px; height: 130px; aspect-ratio: 1 / 1;
+  border: 1px dashed var(--line); border-radius: 50%; color: var(--text-muted); text-align: center; font-size: 0.85rem;
+}
 
 .filter-bar { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 2rem; }
 .filter-btn {
@@ -844,21 +866,24 @@ p { margin: 0 0 1em; max-width: 68ch; }
 
 .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; }
 .gallery-tile {
-  position: relative; aspect-ratio: 4 / 3; padding: 0; border: 1px solid var(--line); border-radius: var(--radius);
+  position: relative; min-height: 280px; padding: 1rem; border: 1px solid var(--line); border-radius: var(--radius);
   overflow: hidden; cursor: pointer; background: linear-gradient(135deg, var(--emerald-600), var(--emerald-800)); color: var(--white);
-  font: inherit; text-align: left;
+  display: flex; flex-direction: column; align-items: center; gap: 0.8rem; font: inherit; text-align: center;
 }
-.gallery-tile img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s var(--ease); }
+.gallery-tile img.card-image-circle { width: 150px; height: 150px; margin: 0.4rem auto 0; transition: transform 0.6s var(--ease); }
 .gallery-tile:hover img { transform: scale(1.05); }
 .gallery-tile .cap {
-  position: absolute; inset: auto 0 0 0; padding: 2rem 0.9rem 0.7rem; font-size: 0.93rem;
-  background: linear-gradient(0deg, rgba(4,20,15,0.9), transparent);
+  display: block; margin-top: auto; padding: 0.6rem 0.3rem 0.2rem; font-size: 0.93rem;
 }
 .gallery-tile .badge {
   position: absolute; top: 0.6rem; right: 0.6rem; background: var(--gold); color: var(--emerald-900);
   font-size: 0.8rem; font-weight: 600; padding: 0.15rem 0.6rem; border-radius: 999px;
 }
-.gallery-tile.is-placeholder { cursor: default; display: grid; place-items: center; text-align: center; padding: 1rem; }
+.gallery-tile.is-placeholder { cursor: default; justify-content: center; padding: 1rem; }
+.gallery-placeholder-circle {
+  display: grid; place-items: center; flex: 0 0 auto; width: 150px; height: 150px; aspect-ratio: 1 / 1;
+  border: 1px dashed var(--line); border-radius: 50%; color: var(--text-muted); font-size: 0.9rem;
+}
 
 dialog.lightbox {
   width: min(94vw, 1000px); max-height: 92vh; padding: 0; border: 1px solid var(--line); border-radius: var(--radius);
@@ -873,16 +898,43 @@ dialog.lightbox::backdrop { background: rgba(2, 11, 8, 0.88); }
 
 .empty-state { padding: 2rem; border: 1px dashed var(--line); border-radius: var(--radius); color: var(--text-muted); }
 
-.contact-layout { display: grid; grid-template-columns: 1fr 1.2fr; gap: clamp(2rem, 5vw, 4rem); align-items: start; }
-.detail-list { margin: 0; display: grid; gap: 1.6rem; }
-.detail-list dt { color: var(--gold); font-family: var(--font-display); font-size: 1.15rem; margin-bottom: 0.25rem; }
-.detail-list dd { margin: 0; color: var(--text); }
-.map-frame { aspect-ratio: 4 / 3; border-radius: var(--radius); border: 1px solid var(--line); overflow: hidden; background: var(--surface); display: grid; place-items: center; text-align: center; padding: 1rem; }
+.contact-section { background: #0b1c14; }
+.contact-layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(260px, 0.85fr); gap: clamp(1.25rem, 3vw, 2.25rem); align-items: stretch; }
+.contact-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.contact-card {
+  display: flex; align-items: flex-start; gap: 1rem; min-width: 0; padding: 1.35rem;
+  border: 1px solid rgba(212, 175, 55, 0.28); border-radius: 16px;
+  background: linear-gradient(145deg, #10271c, #0b1c14); color: #f5f3e9;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18); transition: transform 0.25s ease, border-color 0.25s ease;
+}
+.contact-card:hover { transform: translateY(-3px); border-color: #d4af37; }
+.contact-card-icon {
+  display: grid; place-items: center; flex: 0 0 46px; width: 46px; height: 46px;
+  border: 1px solid rgba(212, 175, 55, 0.42); border-radius: 12px;
+  background: rgba(212, 175, 55, 0.1); color: #d4af37;
+}
+.contact-card-icon svg { width: 23px; height: 23px; }
+.contact-card-content { min-width: 0; }
+.contact-card-content h2 { margin: 0 0 0.55rem; color: #d4af37; font-size: 1.08rem; }
+.contact-value, .contact-fallback { display: block; color: #f5f3e9; font-size: 0.96rem; line-height: 1.65; overflow-wrap: anywhere; }
+.contact-card [hidden], .map-frame [hidden] { display: none !important; }
+.contact-card address { font-style: normal; }
+.contact-card a.contact-value { color: #f5f3e9; text-decoration-color: rgba(212, 175, 55, 0.55); text-underline-offset: 3px; }
+.contact-card a.contact-value:hover { color: #e6ca70; }
+.contact-fallback, .contact-map-fallback { color: #c2cbbf; }
+.map-frame {
+  min-height: 240px; aspect-ratio: 4 / 3; border-radius: 16px; border: 1px solid rgba(212, 175, 55, 0.28);
+  overflow: hidden; background: #0b1c14; color: #c2cbbf; display: grid; place-items: center;
+  text-align: center; padding: 1rem;
+}
 .map-frame iframe { width: 100%; height: 100%; border: 0; }
 
 @media (max-width: 900px) {
   .split, .contact-layout { grid-template-columns: 1fr; }
   .split > h2 { position: static; }
+}
+@media (max-width: 620px) {
+  .contact-card-grid { grid-template-columns: 1fr; }
 }
 
 /* ---------- Journey Video Modal ---------- */

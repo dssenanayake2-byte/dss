@@ -158,6 +158,119 @@
   color: var(--gold-light);
 }
 
+.clubs-admin-body {
+  min-height: 100vh;
+}
+.clubs-admin-top {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem clamp(1rem, 4vw, 3rem);
+  border-bottom: 1px solid rgba(224, 181, 58, 0.2);
+  background: rgba(2, 11, 8, 0.94);
+  backdrop-filter: blur(16px);
+}
+.clubs-admin-top nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.clubs-admin-main {
+  width: min(100% - 2rem, 1000px);
+  margin: clamp(2rem, 5vw, 4rem) auto;
+}
+.clubs-admin-main[hidden] {
+  display: none !important;
+}
+.clubs-admin-heading {
+  margin-bottom: 1.5rem;
+}
+.clubs-admin-heading h1 {
+  margin-bottom: 0.35rem;
+}
+.clubs-admin-heading > p:last-child {
+  color: var(--text-muted);
+}
+.clubs-admin-panel {
+  margin-top: 1.5rem;
+}
+.clubs-admin-panel h2 {
+  margin-top: 0;
+}
+.club-logo-choice {
+  display: grid;
+  gap: 0.25rem 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+  margin: 0 0 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(224, 181, 58, 0.2);
+  border-radius: 12px;
+}
+.club-logo-choice legend {
+  padding: 0 0.4rem;
+  color: var(--gold-soft);
+  font-weight: 600;
+}
+.club-logo-choice .field {
+  margin-bottom: 0;
+}
+.club-logo-choice small {
+  display: block;
+  margin-top: 0.4rem;
+  color: var(--text-muted);
+}
+.club-logo-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+}
+.club-logo-preview[hidden],
+.club-logo-edit-help[hidden] {
+  display: none;
+}
+.club-logo-preview img {
+  width: 64px;
+  height: 64px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+}
+.club-logo-edit-help {
+  grid-column: 1 / -1;
+}
+.club-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.club-delete-btn {
+  color: #ffd0c9;
+  border-color: rgba(255, 135, 120, 0.42);
+}
+.club-delete-btn:hover {
+  color: #ffffff;
+  border-color: #ff8778;
+  background: rgba(255, 135, 120, 0.12);
+}
+
+@media (max-width: 640px) {
+  .clubs-admin-top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .club-logo-choice {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ==========================================================
    Dashboard Shell & Navigation
    ========================================================== */
@@ -649,18 +762,27 @@
   border-color: var(--gold);
 }
 .admin-tile .thumb {
-  aspect-ratio: 16 / 10;
+  min-height: 180px;
+  padding: 1rem;
   background: var(--emerald-900);
   display: grid;
   place-items: center;
   overflow: hidden;
 }
-.admin-tile .thumb img, .admin-tile .thumb iframe {
-  width: 100%;
-  height: 100%;
-  border: 0;
+.admin-tile .thumb img {
+  width: 140px;
+  height: 140px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
   object-fit: cover;
+  object-position: center;
   transition: transform 0.4s var(--ease);
+}
+.admin-tile .thumb iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  border: 0;
 }
 .admin-tile:hover .thumb img {
   transform: scale(1.05);

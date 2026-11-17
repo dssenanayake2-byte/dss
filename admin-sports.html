@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Manage Sports | D.S. Senanayake Central College</title>
+  <link rel="icon" href="images/school-emblem-icon.png" type="image/png" sizes="96x96">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500..800&amp;family=Marcellus&amp;family=Noto+Sans+Sinhala:wght@400;600&amp;family=Playfair+Display:ital,wght@1,400&amp;family=Plus+Jakarta+Sans:wght@400..700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-body clubs-admin-body" data-admin-page="sports">
+  <header class="clubs-admin-top">
+    <a class="brand" href="index.html" aria-label="D.S. Senanayake Central College home">
+      <div class="brand-crest-ring sm">
+        <img class="brand-crest" src="images/school-emblem.webp" alt="" width="38" height="42" decoding="async">
+      </div>
+      <div class="brand-text-wrap">
+        <span class="brand-line-1">D.S. Senanayake</span>
+        <span class="brand-line-3">Sports Admin</span>
+      </div>
+    </a>
+    <nav aria-label="Admin links">
+      <a class="btn btn-ghost btn-sm" href="admin/dashboard.html#activities">Back to dashboard</a>
+      <a class="btn btn-ghost btn-sm" href="sports.html">View public page</a>
+    </nav>
+  </header>
+
+  <main class="clubs-admin-main" id="sports-admin-view" hidden>
+    <div class="clubs-admin-heading">
+      <p class="eyebrow">Content management</p>
+      <h1>Sports</h1>
+      <p>Add and publish sports. They will appear on the public Sports page.</p>
+    </div>
+
+    <section class="panel clubs-admin-panel" aria-labelledby="sports-form-heading">
+      <h2 id="sports-form-heading">Add a Sport</h2>
+      <form id="sports-form">
+        <div class="field">
+          <label for="sport-name">Sport Name</label>
+          <input id="sport-name" name="title" type="text" maxlength="200" required>
+        </div>
+        <fieldset class="club-logo-choice">
+          <legend>Logo Image Upload / URL</legend>
+          <div class="field">
+            <label for="sport-logo-file">Upload a logo</label>
+            <input id="sport-logo-file" name="logo_file" type="file" accept="image/jpeg,image/png,image/webp">
+            <small>JPEG, PNG, or WebP. Supabase uploads are limited to 5 MB; local demo uploads to 512 KB.</small>
+          </div>
+          <div class="field">
+            <label for="sport-logo-url">Or enter an HTTPS image URL</label>
+            <input id="sport-logo-url" name="logo_url" type="url" inputmode="url" maxlength="2048" placeholder="https://example.org/sport-logo.png">
+          </div>
+          <div class="club-logo-preview" id="sport-logo-preview" hidden aria-live="polite"></div>
+          <small class="club-logo-edit-help" id="sport-logo-edit-help" hidden>Leave both logo inputs empty to keep the current logo.</small>
+        </fieldset>
+        <div class="field">
+          <label for="sport-description">Description</label>
+          <textarea id="sport-description" name="description" rows="5" maxlength="5000" required></textarea>
+        </div>
+        <div class="field">
+          <label for="sport-teacher">Teacher-in-Charge Name</label>
+          <input id="sport-teacher" name="teacher_in_charge" type="text" maxlength="200" autocomplete="name" required>
+        </div>
+        <p class="form-msg" id="sports-form-status" role="status" aria-live="polite"></p>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="sports-submit" type="submit">Add and Publish</button>
+          <button class="btn btn-ghost" id="sports-cancel-edit" type="button" hidden>Cancel Edit</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel clubs-admin-panel" aria-labelledby="sports-list-heading">
+      <h2 id="sports-list-heading">Current Sports</h2>
+      <div id="sports-admin-list" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="js/config.js" defer></script>
+  <script src="js/supabase-config.js" defer></script>
+  <script src="js/admin.js" defer></script>
+</body>
+</html>

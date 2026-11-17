@@ -18,10 +18,10 @@
     { category: "Staff", title: "Academic and non-academic staff", description: "Find information about teachers and school staff.", url: "academics.html", terms: "teachers deputy principal prefects board" },
     { category: "News", title: "Latest news and college updates", description: "See the latest college news, events, and announcements.", url: "index.html#news-section", terms: "updates press stories" },
     { category: "Notices", title: "Notices and announcements", description: "Find current school notices and important announcements.", url: "index.html#site-notice-banner", terms: "urgent notice admissions" },
-    { category: "Admissions", title: "Admissions and contact", description: "Find admissions information and contact the school.", url: "contact.html#contact", terms: "enrolment enrollment visit office" },
+    { category: "Admissions", title: "Admissions and contact", description: "Find admissions information and contact the school.", url: "admissions.html", terms: "enrolment enrollment visit office" },
     { category: "Achievements", title: "School achievements", description: "Explore student and college achievements.", url: "activities.html#achievements", terms: "awards success recognition" },
     { category: "Clubs", title: "Clubs and societies", description: "Discover student clubs, societies, and activities.", url: "activities.html#clubs", terms: "ict science cultural extracurricular" },
-    { category: "Sports", title: "Sports and athletics", description: "Explore sports, athletics, and school teams.", url: "activities.html#sports", terms: "cricket teams games" },
+    { category: "Sports", title: "Sports and athletics", description: "Explore sports, athletics, and school teams.", url: "sports.html", terms: "cricket teams games" },
     { category: "Activities", title: "Cadets, scouting, and events", description: "Find information about cadeting and school events.", url: "activities.html#cadets", terms: "bands leadership events" },
     { category: "Downloads", title: "Downloads and learning resources", description: "Find school downloads, textbooks, and learning resources.", url: "contact.html#downloads", terms: "documents forms textbooks" },
     { category: "Gallery", title: "College gallery", description: "Browse photos and videos from college life.", url: "gallery.html", terms: "photos media campus" },
@@ -210,7 +210,7 @@
           category: item.category || "Activities",
           title: item.title,
           description: item.description || "Explore college activities.",
-          url: "activities.html#" + (activityIds[item.category] || "activities-list")
+          url: item.category === "Sports" ? "sports.html" : "activities.html#" + (activityIds[item.category] || "activities-list")
         });
       });
 

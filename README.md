@@ -17,8 +17,8 @@ This demo login is visible in the website's JavaScript and can be bypassed. It d
 
 | Path | Purpose |
 | --- | --- |
-| `index.html`, `about.html`, `academics.html`, `activities.html`, `gallery.html`, `contact.html` | Public pages |
-| `admin/login.html`, `admin/dashboard.html` | Staff portal |
+| `index.html`, `about.html`, `academics.html`, `admissions.html`, `activities.html`, `sports.html`, `gallery.html`, `contact.html` | Public pages |
+| `admin/login.html`, `admin/dashboard.html`, `admin-clubs.html`, `admin-sports.html` | Staff portal and activity managers |
 | `css/style.css` | Design tokens, layout, all public components (admin reuses it) |
 | `css/animations.css` | All motion, switched off for `prefers-reduced-motion` |
 | `css/responsive.css` | Tablet and mobile rules |
@@ -47,7 +47,7 @@ Other photos go in `images/school/`. Gallery items can use these site images or 
 ## 2. Set up Supabase (free plan is enough)
 
 1. Create a project at supabase.com.
-2. Open **SQL Editor**, paste all of `supabase/setup_master.sql`, and run it. The idempotent script includes the existing dashboard backend plus the Admissions, Academics, Admin Users, and `admissions-media` setup.
+2. Open **SQL Editor**, paste all of `supabase/setup_master.sql`, and run it. The idempotent script includes the dashboard backend, Sports and Clubs & Societies logo and teacher fields, Admissions, Academics, Admin Users, and `admissions-media` setup. Rerun it after updates to apply schema changes to an existing project.
 3. **Authentication > Users > Add user**: create the first administrator with a strong password you choose.
 4. In the SQL Editor run (use that person's email):
    `update public.profiles set role = 'main_admin', active = true where email = 'THEIR_EMAIL';`

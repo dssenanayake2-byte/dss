@@ -427,7 +427,14 @@
       return { title: row.title, body: row.body, priority: row.priority || "Notice", status: row.status };
     }
     if (key === "activities") {
-      return { title: row.title, category: row.category, description: row.description, status: row.status };
+      return {
+        title: row.title,
+        category: row.category,
+        description: row.description,
+        logo_url: row.logo_url || null,
+        teacher_in_charge: row.teacher_in_charge || null,
+        status: row.status
+      };
     }
     if (key === "academic_resources") {
       if (!ACADEMIC_SECTIONS.some((section) => section.value === row.section)) {
@@ -526,12 +533,13 @@
       }
     }
     if (message) toast(message, "error");
-    location.replace("login.html");
+    location.replace(pageType === "clubs" || pageType === "sports" ? "admin/login.html" : "login.html");
   }
 
   /* Run page controllers */
   if (pageType === "login") initLogin();
   else if (pageType === "dashboard") initDashboard();
+  else if (pageType === "clubs" || pageType === "sports") initActivityCatalogAdmin();
 
   /* =====================================================================
      LOGIN CONTROLLER
@@ -1869,5 +1877,364 @@
 
     window.addEventListener("hashchange", route);
     route();
+  }
+
+  async function initActivityCatalogAdmin() {
+    const isSports = pageType === "sports";
+    const label = isSports ? "Sport" : "Club or society";
+    const pluralLabel = isSports ? "Sports" : "Clubs & Societies";
+    const selectors = isSports ? {
+      main: "#sports-admin-view",
+      form: "#sports-form",
+      message: "#sports-form-status",
+      list: "#sports-admin-list",
+      submit: "#sports-submit",
+      heading: "#sports-form-heading",
+      cancel: "#sports-cancel-edit",
+      name: "#sport-name",
+      type: null,
+      logoFile: "#sport-logo-file",
+      logoUrl: "#sport-logo-url",
+      logoPreview: "#sport-logo-preview",
+      logoHelp: "#sport-logo-edit-help",
+      description: "#sport-description",
+      teacher: "#sport-teacher",
+      logoFolder: "sports/"
+    } : {
+      main: "#clubs-admin-view",
+      form: "#club-form",
+      message: "#club-form-status",
+      list: "#clubs-admin-list",
+      submit: "#club-submit",
+      heading: "#club-form-heading",
+      cancel: "#club-cancel-edit",
+      name: "#club-name",
+      type: "#club-type",
+      logoFile: "#club-logo-file",
+      logoUrl: "#club-logo-url",
+      logoPreview: "#club-logo-preview",
+      logoHelp: "#club-logo-edit-help",
+      description: "#club-description",
+      teacher: "#club-teacher",
+      logoFolder: "clubs/"
+    };
+    const storedSession = getSession();
+    let profile;
+    let authData;
+    if (sb) {
+      try {
+        const authResult = await sb.auth.getUser();
+        if (authResult.error || !authResult.data.user) throw authResult.error || new Error("No signed-in user.");
+        authData = authResult.data;
+        const profileResult = await sb.from("profiles").select("id,email,full_name,role,active")
+          .eq("id", authData.user.id).maybeSingle();
+        if (profileResult.error) throw profileResult.error;
+        profile = profileResult.data;
+      } catch (error) {
+        console.error("Could not verify the staff session for " + pluralLabel + ".", error);
+        signOutAndReturn("Your staff session could not be verified. Please sign in again.");
+        return;
+      }
+    } else {
+      if (!storedSession || storedSession.demo !== true || storedSession.id !== "demo-admin") {
+        signOutAndReturn("Sign in to the local demo first.");
+        return;
+      }
+      profile = {
+        id: "demo-admin",
+        email: "malith",
+        full_name: "Malith",
+        role: "main_admin",
+        active: true
+      };
+      if (!initializeDemoData()) return;
+    }
+
+    if (!profile || !profile.active || !["main_admin", "editor"].includes(profile.role)) {
+      signOutAndReturn("Your staff account is inactive or no longer authorized.");
+      return;
+    }
+    const signedInAt = Number(storedSession && storedSession.signedInAt);
+    if (profile.role === "editor" && (!Number.isFinite(signedInAt) || Date.now() - signedInAt >= EDITOR_SESSION_LIMIT)) {
+      signOutAndReturn("Editor sessions are limited to one hour. Please sign in again.");
+      return;
+    }
+    currentSession = {
+      id: profile.id,
+      email: profile.email || (authData && authData.user.email),
+      full_name: profile.full_name,
+      role: profile.role,
+      signedInAt: signedInAt || Date.now(),
+      demo: !sb
+    };
+    if (!setSession(currentSession)) {
+      signOutAndReturn("Could not save the verified staff session.");
+      return;
+    }
+    if (profile.role === "editor") {
+      setTimeout(() => signOutAndReturn("Your one-hour editor session has ended."),
+        Math.max(0, currentSession.signedInAt + EDITOR_SESSION_LIMIT - Date.now()));
+    }
+
+    const main = $(selectors.main);
+    const form = $(selectors.form);
+    const message = $(selectors.message);
+    const list = $(selectors.list);
+    const submit = $(selectors.submit);
+    const formHeading = $(selectors.heading);
+    const cancelEdit = $(selectors.cancel);
+    const nameInput = $(selectors.name);
+    const typeInput = selectors.type ? $(selectors.type) : null;
+    const logoFile = $(selectors.logoFile);
+    const logoUrl = $(selectors.logoUrl);
+    const logoPreview = $(selectors.logoPreview);
+    const logoEditHelp = $(selectors.logoHelp);
+    const descriptionInput = $(selectors.description);
+    const teacherInput = $(selectors.teacher);
+    if (!main || !form || !message || !list || !submit || !formHeading || !cancelEdit ||
+        !nameInput || (!isSports && !typeInput) || !logoFile || !logoUrl || !logoPreview ||
+        !logoEditHelp || !descriptionInput || !teacherInput) {
+      throw new Error("The " + pluralLabel + " admin page is missing required form elements.");
+    }
+
+    let editingId = null;
+
+    function showMessage(text, kind) {
+      message.textContent = text;
+      message.className = "form-msg" + (kind === "error" ? " error" : "");
+    }
+
+    function renderLogoPreview(url) {
+      logoPreview.replaceChildren();
+      const safePreview = /^https:\/\//i.test(url || "") ||
+        /^data:image\/(?:jpeg|png|webp);base64,/i.test(url || "");
+      if (!safePreview) {
+        logoPreview.hidden = true;
+        return;
+      }
+      logoPreview.append(
+        h("img", { src: url, alt: "Current " + label.toLowerCase() + " logo" }),
+        h("span", { text: "Current logo" })
+      );
+      logoPreview.hidden = false;
+    }
+
+    function resetForm() {
+      form.reset();
+      editingId = null;
+      formHeading.textContent = "Add " + (isSports ? "a Sport" : "a Club or Society");
+      submit.textContent = "Add and Publish";
+      cancelEdit.hidden = true;
+      logoEditHelp.hidden = true;
+      renderLogoPreview("");
+      showMessage("", "");
+    }
+
+    function beginEdit(id) {
+      const entry = getLocal("activities").find((row) => row.id === id);
+      if (!entry) {
+        showMessage("This entry is no longer available. Refresh the list and try again.", "error");
+        renderList();
+        return;
+      }
+      editingId = entry.id;
+      nameInput.value = entry.title || "";
+      if (typeInput) typeInput.value = entry.category === "Societies" ? "Society" : "Club";
+      descriptionInput.value = entry.description || "";
+      teacherInput.value = entry.teacher_in_charge || "";
+      logoFile.value = "";
+      logoUrl.value = "";
+      renderLogoPreview(entry.logo_url);
+      formHeading.textContent = "Edit " + (isSports ? "Sport" : "Club or Society");
+      submit.textContent = "Save Changes";
+      cancelEdit.hidden = false;
+      logoEditHelp.hidden = false;
+      showMessage("Update the details and save your changes.", "");
+      form.scrollIntoView({ behavior: "smooth", block: "start" });
+      nameInput.focus();
+    }
+
+    function renderList() {
+      const entries = getLocal("activities").filter((row) => isSports
+        ? row.category === "Sports"
+        : row.category === "Clubs" || row.category === "Societies");
+      if (!entries.length) {
+        list.replaceChildren(h("p", { class: "empty-state", text: "No " + pluralLabel.toLowerCase() + " have been added yet." }));
+        return;
+      }
+      const rows = entries.map((row) => {
+        const editButton = h("button", {
+          class: "btn btn-ghost btn-sm",
+          type: "button",
+          "aria-label": "Edit " + row.title,
+          onclick: () => beginEdit(row.id)
+        }, "Edit");
+        const deleteButton = h("button", {
+          class: "btn btn-ghost btn-sm club-delete-btn",
+          type: "button",
+          "aria-label": "Delete " + row.title,
+          onclick: () => deleteEntry(row.id)
+        }, "Delete");
+        const cells = isSports
+          ? [
+            h("td", null, h("strong", { text: row.title })),
+            h("td", { text: row.teacher_in_charge || "Not provided" }),
+            h("td", null, h("span", { class: "badge " + (row.status === "published" ? "live" : "draft"), text: row.status })),
+            h("td", { class: "club-row-actions" }, editButton, deleteButton)
+          ]
+          : [
+            h("td", null, h("strong", { text: row.title })),
+            h("td", { text: row.category === "Clubs" ? "Club" : "Society" }),
+            h("td", { text: row.teacher_in_charge || "Not provided" }),
+            h("td", null, h("span", { class: "badge " + (row.status === "published" ? "live" : "draft"), text: row.status })),
+            h("td", { class: "club-row-actions" }, editButton, deleteButton)
+          ];
+        return h("tr", null, cells);
+      });
+      list.replaceChildren(h("div", { class: "table-wrap" },
+        h("table", { class: "data-table club-admin-table" },
+          h("thead", null, h("tr", null,
+            (isSports ? ["Sport Name", "Teacher-in-Charge", "Status", "Actions"]
+              : ["Name", "Type", "Teacher-in-Charge", "Status", "Actions"])
+              .map((text) => h("th", { scope: "col", text }))
+          )),
+          h("tbody", null, rows)
+        )
+      ));
+    }
+
+    async function deleteEntry(id) {
+      const records = getLocal("activities");
+      const entry = records.find((row) => row.id === id);
+      if (!entry) {
+        showMessage("This entry is no longer available. Refresh the list and try again.", "error");
+        renderList();
+        return;
+      }
+      if (!window.confirm("Delete \"" + entry.title + "\"? This cannot be undone.")) return;
+      const remaining = records.filter((row) => row.id !== id);
+      if (!await saveChange("activities", remaining, "deleted", entry.title)) {
+        showMessage("The entry could not be deleted. See the notification for details.", "error");
+        return;
+      }
+      if (editingId === id) resetForm();
+      renderList();
+      showMessage(label + " deleted successfully.", "");
+    }
+
+    if (sb) {
+      try {
+        const { data, error } = await sb.from("activities").select("*").order("created_at", { ascending: false });
+        if (error) throw error;
+        if (!setLocal("activities", data || [])) throw new Error("Could not update the activities cache.");
+      } catch (error) {
+        console.error("Could not load " + pluralLabel + " from Supabase.", error);
+        showMessage(pluralLabel + " could not be loaded: " + (error.message || "Supabase request failed."), "error");
+        return;
+      }
+    }
+
+    main.hidden = false;
+    renderList();
+    logoFile.addEventListener("change", () => {
+      if (logoFile.files.length) logoUrl.value = "";
+    });
+    logoUrl.addEventListener("input", () => {
+      if (logoUrl.value.trim()) logoFile.value = "";
+    });
+    cancelEdit.addEventListener("click", resetForm);
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      showMessage("", "");
+      submit.disabled = true;
+      let uploadedPath = null;
+      try {
+        const title = nameInput.value.trim();
+        const type = isSports ? "Sports" : typeInput.value;
+        const description = descriptionInput.value.trim();
+        const teacher = teacherInput.value.trim();
+        const imageFile = logoFile.files[0];
+        const imageUrlInput = logoUrl.value.trim();
+        const records = getLocal("activities");
+        const existingEntry = editingId ? records.find((row) => row.id === editingId) : null;
+        if (!title || !description || !teacher) throw new Error("Complete all required fields.");
+        if (title.length > 200 || description.length > 5000 || teacher.length > 200) {
+          throw new Error("Name and teacher name must be 200 characters or fewer; description must be 5,000 characters or fewer.");
+        }
+        if (editingId && !existingEntry) throw new Error("This entry is no longer available. Refresh the list and try again.");
+        if ((!isSports && type !== "Club" && type !== "Society") || (imageFile && imageUrlInput) ||
+            (!imageFile && !imageUrlInput && !(existingEntry && existingEntry.logo_url))) {
+          throw new Error("Provide a logo, or keep the current logo while editing.");
+        }
+
+        let nextLogoUrl = existingEntry && existingEntry.logo_url;
+        if (imageFile) {
+          const extensions = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+          const extension = extensions[imageFile.type];
+          if (!extension) throw new Error("Use a JPEG, PNG, or WebP logo.");
+          if (imageFile.size > (sb ? 5 : 512) * 1024) {
+            throw new Error(sb ? "The logo must be 5 MB or smaller." : "Local demo uploads must be 512 KB or smaller. Use an HTTPS image URL for larger logos.");
+          }
+          if (sb) {
+            uploadedPath = selectors.logoFolder + crypto.randomUUID() + "." + extension;
+            const { error } = await sb.storage.from("gallery").upload(uploadedPath, imageFile, {
+              cacheControl: "3600",
+              contentType: imageFile.type,
+              upsert: false
+            });
+            if (error) throw error;
+            const { data } = sb.storage.from("gallery").getPublicUrl(uploadedPath);
+            if (!data || !data.publicUrl) throw new Error("Could not create a public URL for the uploaded logo.");
+            nextLogoUrl = data.publicUrl;
+          } else {
+            nextLogoUrl = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = () => reject(new Error("Could not read the selected logo image."));
+              reader.readAsDataURL(imageFile);
+            });
+          }
+        } else if (imageUrlInput) {
+          let parsedUrl;
+          try {
+            parsedUrl = new URL(imageUrlInput);
+          } catch {
+            throw new Error("Enter a valid HTTPS logo URL.");
+          }
+          if (parsedUrl.protocol !== "https:" || parsedUrl.username || parsedUrl.password) {
+            throw new Error("Logo URLs must use HTTPS and cannot contain credentials.");
+          }
+          nextLogoUrl = parsedUrl.href;
+        }
+
+        const entry = {
+          ...(existingEntry || {}),
+          id: existingEntry ? existingEntry.id : "act-" + Date.now(),
+          title,
+          category: isSports ? "Sports" : type === "Club" ? "Clubs" : "Societies",
+          description,
+          logo_url: nextLogoUrl,
+          teacher_in_charge: teacher,
+          status: "published",
+          updated_at: new Date().toISOString()
+        };
+        const nextRecords = existingEntry
+          ? records.map((row) => row.id === existingEntry.id ? entry : row)
+          : [entry, ...records];
+        const action = existingEntry ? "updated" : "created";
+        if (!await saveChange("activities", nextRecords, action, entry.title)) {
+          showMessage("The entry could not be saved. See the notification for details.", "error");
+          return;
+        }
+        resetForm();
+        showMessage(existingEntry ? label + " updated successfully." : label + " published successfully.", "");
+        renderList();
+      } catch (error) {
+        console.error("Could not save " + label + " entry.", error);
+        showMessage(error.message || "Could not save the entry. Try again.", "error");
+      } finally {
+        submit.disabled = false;
+      }
+    });
   }
 })();

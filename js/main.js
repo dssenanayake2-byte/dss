@@ -185,6 +185,7 @@
       var key = el.getAttribute("data-content-key");
       if (protectedKeys && Object.prototype.hasOwnProperty.call(protectedKeys, key)) return;
       var v = map[key];
+      if (typeof v === "string") v = v.replace(/\[PLACEHOLDER:[^\]]*\]/gi, "").trim();
       if (!v) return;
       var attr = el.getAttribute("data-content-attr");
       var fallback = el.previousElementSibling;
@@ -196,11 +197,10 @@
         }
       } else if (attr === "href") {
         var prefix = el.getAttribute("data-prefix") || "";
-        if (/^\[PLACEHOLDER/i.test(v)) return;
         var okLink = prefix ? true : /^https:\/\//i.test(v);
         if (!okLink) return;
         el.href = prefix + (prefix === "tel:" ? v.split(/[,;\/]/)[0].replace(/[^\d+]/g, "") : v);
-        el.textContent = v; el.hidden = false;
+        el.textContent = el.getAttribute("data-content-label") || v; el.hidden = false;
         if (hasFallback) fallback.hidden = true;
       } else {
         el.textContent = v;
@@ -291,10 +291,23 @@
   /* ---------- Activities page ---------- */
   var actRoot = document.getElementById("activities-list");
   if (actRoot) {
+    var categoryFilter = actRoot.getAttribute("data-category") || "";
     var order = ["Sports", "Clubs", "Societies", "Achievements", "Events", "Extra-curricular"];
     var activityIds = { Sports: "sports", Clubs: "clubs", Societies: "societies", Achievements: "achievements", "Extra-curricular": "cadets" };
     function renderActivitiesList(rows) {
-      if (!rows || !rows.length) return;
+      rows = (rows || []).filter(function (row) { return !categoryFilter || row.category === categoryFilter; });
+      if (!rows || !rows.length) {
+        actRoot.textContent = "";
+        actRoot.appendChild(make("p", "empty-state", categoryFilter === "Sports"
+          ? "No sports have been published yet."
+          : "No activities have been published yet."));
+        Object.keys(activityIds).forEach(function (id) {
+          var anchor = make("span", "activity-anchor");
+          anchor.id = activityIds[id];
+          actRoot.appendChild(anchor);
+        });
+        return;
+      }
       var groups = {};
       rows.forEach(function (r) { (groups[r.category] = groups[r.category] || []).push(r); });
       var cats = order.filter(function (c) { return groups[c]; })
@@ -306,10 +319,34 @@
         block.appendChild(make("h2", null, c));
         var grid = make("div", "activity-grid");
         groups[c].forEach(function (a) {
-          var item = make("article", "activity-item");
+          var isClubOrSociety = c === "Clubs" || c === "Societies";
+          var isSport = c === "Sports";
+          var item = make("article", isClubOrSociety ? "activity-item club-card" : isSport ? "activity-item sport-card" : "activity-item");
           if (a.event_date) { var t = make("time", null, fmtDate(a.event_date)); t.dateTime = a.event_date; item.appendChild(t); }
+          if (isClubOrSociety || isSport) {
+            var logo = make("div", isSport ? "sport-card-logo" : "club-card-logo");
+            if (a.logo_url && (/^https:\/\//i.test(a.logo_url) || /^data:image\/(?:jpeg|png|webp);base64,/i.test(a.logo_url))) {
+              var image = document.createElement("img");
+              image.className = "card-image-circle";
+              image.src = a.logo_url;
+              image.alt = a.title + " logo";
+              image.loading = "lazy";
+              image.addEventListener("error", function () {
+                logo.textContent = "";
+                logo.appendChild(make("span", "club-logo-placeholder", "Logo unavailable"));
+              }, { once: true });
+              logo.appendChild(image);
+            } else {
+              logo.appendChild(make("span", "club-logo-placeholder", "Logo not provided"));
+            }
+            item.appendChild(logo);
+          }
           item.appendChild(make("h3", null, a.title));
           if (a.description) item.appendChild(make("p", null, a.description));
+          if (isClubOrSociety || isSport) {
+            item.appendChild(make("p", "club-card-teacher",
+              a.teacher_in_charge ? "Teacher-in-Charge: " + a.teacher_in_charge : "Teacher-in-Charge: Not provided"));
+          }
           grid.appendChild(item);
         });
         block.appendChild(grid);
@@ -325,12 +362,23 @@
     }
 
     var pubActs = readCachedArray("activities").filter(function (x) { return x.status === "published"; });
-    if (pubActs.length) renderActivitiesList(pubActs);
+    if (pubActs.length || categoryFilter) renderActivitiesList(pubActs);
+
+    window.addEventListener("storage", function (event) {
+      if (event.key !== "dscc_activities") return;
+      try {
+        var cachedActivities = event.newValue ? JSON.parse(event.newValue) : [];
+        if (!Array.isArray(cachedActivities)) throw new TypeError("Expected an array.");
+        renderActivitiesList(cachedActivities.filter(function (x) { return x.status === "published"; }));
+      } catch (error) {
+        console.error("Could not refresh published activities from the local cache.", error);
+      }
+    });
 
     if (configured) {
-      api("activities?select=id,title,category,description,event_date&status=eq.published&order=event_date.desc.nullslast")
+      api("activities?select=id,title,category,description,event_date,logo_url,teacher_in_charge&status=eq.published&order=event_date.desc.nullslast")
         .then(function (rows) {
-          if (rows.length) renderActivitiesList(rows);
+          if (rows.length || categoryFilter) renderActivitiesList(rows);
         }).catch(function (error) { console.error("Could not load public activities from Supabase.", error); });
     }
   }
@@ -376,6 +424,7 @@
         tile.setAttribute("aria-label", (i.caption || "Gallery item") + (i.media_type === "video" ? " (video)" : ""));
         if (i.media_type !== "video") {
           var im = document.createElement("img");
+          im.className = "card-image-circle";
           im.src = i.image_url; im.alt = ""; im.loading = "lazy";
           tile.appendChild(im);
         } else tile.appendChild(make("span", "badge", "Video"));

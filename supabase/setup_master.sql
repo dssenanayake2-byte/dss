@@ -210,6 +210,9 @@ alter table public.activities drop constraint if exists activities_category_chec
 alter table public.activities
   add constraint activities_category_check
   check (category in ('Sports', 'Clubs', 'Societies', 'Achievements', 'Events', 'Extra-curricular'));
+alter table public.activities
+  add column if not exists logo_url text,
+  add column if not exists teacher_in_charge text;
 
 create table if not exists public.gallery_items (
   id          uuid primary key default gen_random_uuid(),

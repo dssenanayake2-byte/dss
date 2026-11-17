@@ -319,21 +319,22 @@ p { margin: 0 0 1em; max-width: 68ch; }
 
 .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; }
 .gallery-tile {
-  position: relative; aspect-ratio: 4 / 3; padding: 0; border: 1px solid var(--line); border-radius: var(--radius);
+  position: relative; min-height: 280px; padding: 1rem; border: 1px solid var(--line); border-radius: var(--radius);
   overflow: hidden; cursor: pointer; background: linear-gradient(135deg, var(--emerald-600), var(--emerald-800)); color: var(--white);
-  font: inherit; text-align: left;
+  display: flex; flex-direction: column; align-items: center; gap: 0.8rem; font: inherit; text-align: center;
 }
-.gallery-tile img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s var(--ease); }
+.card-image-circle { display: block; flex: 0 0 auto; width: clamp(120px, 36vw, 150px); height: clamp(120px, 36vw, 150px); aspect-ratio: 1 / 1; border-radius: 50%; object-fit: cover; object-position: center; }
+.gallery-tile img.card-image-circle { width: 150px; height: 150px; margin: 0.4rem auto 0; transition: transform 0.6s var(--ease); }
 .gallery-tile:hover img { transform: scale(1.05); }
 .gallery-tile .cap {
-  position: absolute; inset: auto 0 0 0; padding: 2rem 0.9rem 0.7rem; font-size: 0.93rem;
-  background: linear-gradient(0deg, rgba(4,20,15,0.9), transparent);
+  display: block; margin-top: auto; padding: 0.6rem 0.3rem 0.2rem; font-size: 0.93rem;
 }
 .gallery-tile .badge {
   position: absolute; top: 0.6rem; right: 0.6rem; background: var(--gold); color: var(--emerald-900);
   font-size: 0.8rem; font-weight: 600; padding: 0.15rem 0.6rem; border-radius: 999px;
 }
-.gallery-tile.is-placeholder { cursor: default; display: grid; place-items: center; text-align: center; padding: 1rem; }
+.gallery-tile.is-placeholder { cursor: default; justify-content: center; padding: 1rem; }
+.gallery-placeholder-circle { display: grid; place-items: center; flex: 0 0 auto; width: 150px; height: 150px; aspect-ratio: 1 / 1; border: 1px dashed var(--line); border-radius: 50%; color: var(--text-muted); font-size: 0.9rem; }
 
 dialog.lightbox {
   width: min(94vw, 1000px); max-height: 92vh; padding: 0; border: 1px solid var(--line); border-radius: var(--radius);
@@ -348,16 +349,43 @@ dialog.lightbox::backdrop { background: rgba(2, 11, 8, 0.88); }
 
 .empty-state { padding: 2rem; border: 1px dashed var(--line); border-radius: var(--radius); color: var(--text-muted); }
 
-.contact-layout { display: grid; grid-template-columns: 1fr 1.2fr; gap: clamp(2rem, 5vw, 4rem); align-items: start; }
-.detail-list { margin: 0; display: grid; gap: 1.6rem; }
-.detail-list dt { color: var(--gold); font-family: var(--font-display); font-size: 1.15rem; margin-bottom: 0.25rem; }
-.detail-list dd { margin: 0; color: var(--text); }
-.map-frame { aspect-ratio: 4 / 3; border-radius: var(--radius); border: 1px solid var(--line); overflow: hidden; background: var(--surface); display: grid; place-items: center; text-align: center; padding: 1rem; }
+.contact-section { background: #0b1c14; }
+.contact-layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(260px, 0.85fr); gap: clamp(1.25rem, 3vw, 2.25rem); align-items: stretch; }
+.contact-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.contact-card {
+  display: flex; align-items: flex-start; gap: 1rem; min-width: 0; padding: 1.35rem;
+  border: 1px solid rgba(212, 175, 55, 0.28); border-radius: 16px;
+  background: linear-gradient(145deg, #10271c, #0b1c14); color: #f5f3e9;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18); transition: transform 0.25s ease, border-color 0.25s ease;
+}
+.contact-card:hover { transform: translateY(-3px); border-color: #d4af37; }
+.contact-card-icon {
+  display: grid; place-items: center; flex: 0 0 46px; width: 46px; height: 46px;
+  border: 1px solid rgba(212, 175, 55, 0.42); border-radius: 12px;
+  background: rgba(212, 175, 55, 0.1); color: #d4af37;
+}
+.contact-card-icon svg { width: 23px; height: 23px; }
+.contact-card-content { min-width: 0; }
+.contact-card-content h2 { margin: 0 0 0.55rem; color: #d4af37; font-size: 1.08rem; }
+.contact-value, .contact-fallback { display: block; color: #f5f3e9; font-size: 0.96rem; line-height: 1.65; overflow-wrap: anywhere; }
+.contact-card [hidden], .map-frame [hidden] { display: none !important; }
+.contact-card address { font-style: normal; }
+.contact-card a.contact-value { color: #f5f3e9; text-decoration-color: rgba(212, 175, 55, 0.55); text-underline-offset: 3px; }
+.contact-card a.contact-value:hover { color: #e6ca70; }
+.contact-fallback, .contact-map-fallback { color: #c2cbbf; }
+.map-frame {
+  min-height: 240px; aspect-ratio: 4 / 3; border-radius: 16px; border: 1px solid rgba(212, 175, 55, 0.28);
+  overflow: hidden; background: #0b1c14; color: #c2cbbf; display: grid; place-items: center;
+  text-align: center; padding: 1rem;
+}
 .map-frame iframe { width: 100%; height: 100%; border: 0; }
 
 @media (max-width: 900px) {
   .split, .contact-layout { grid-template-columns: 1fr; }
   .split > h2 { position: static; }
+}
+@media (max-width: 620px) {
+  .contact-card-grid { grid-template-columns: 1fr; }
 }
 
 /* ==========================================================
@@ -576,7 +604,7 @@ dialog.lightbox::backdrop { background: rgba(2, 11, 8, 0.88); }
           <p>Featured activities will be chosen by the school in the admin dashboard.</p>
         </div>
         <div class="feature-grid">
-          <a class="feature-tile reveal" href="#activities"><div><h3>[PLACEHOLDER: Sports]</h3><small>Replace with a verified activity</small></div></a>
+          <a class="feature-tile reveal" href="sports.html"><div><h3>Explore Sports</h3><small>Teams, athletics, and school sport</small></div></a>
           <a class="feature-tile reveal" style="--delay:.1s" href="#activities"><div><h3>[PLACEHOLDER: Clubs and societies]</h3><small>Replace with a verified activity</small></div></a>
           <a class="feature-tile reveal" style="--delay:.2s" href="#activities"><div><h3>[PLACEHOLDER: Events]</h3><small>Replace with a verified activity</small></div></a>
         </div>
@@ -744,9 +772,9 @@ dialog.lightbox::backdrop { background: rgba(2, 11, 8, 0.88); }
       <div class="container">
         <div class="filter-bar" id="gallery-filters" role="group" aria-label="Filter by category"></div>
         <div class="gallery-grid" id="gallery-grid" aria-live="polite">
-          <div class="gallery-tile is-placeholder"><span class="placeholder-note">[PLACEHOLDER: Gallery photo]</span></div>
-          <div class="gallery-tile is-placeholder"><span class="placeholder-note">[PLACEHOLDER: Gallery photo]</span></div>
-          <div class="gallery-tile is-placeholder"><span class="placeholder-note">[PLACEHOLDER: Approved video]</span></div>
+          <div class="gallery-tile is-placeholder"><span class="gallery-placeholder-circle">Photo</span><span class="cap">Gallery photo</span></div>
+          <div class="gallery-tile is-placeholder"><span class="gallery-placeholder-circle">Photo</span><span class="cap">Gallery photo</span></div>
+          <div class="gallery-tile is-placeholder"><span class="gallery-placeholder-circle">Video</span><span class="cap">Approved video</span></div>
         </div>
       </div>
     </section>
@@ -766,16 +794,28 @@ dialog.lightbox::backdrop { background: rgba(2, 11, 8, 0.88); }
         <p class="lead">How to find and reach the school.</p>
       </div>
     </section>
-    <section class="section">
+    <section class="section contact-section">
       <div class="container contact-layout">
-        <dl class="detail-list reveal">
-          <div><dt>Address</dt><dd class="content-text" data-content-key="contact.address"><span class="placeholder-note">[PLACEHOLDER: Verified address]</span></dd></div>
-          <div><dt>Phone</dt><dd><span class="placeholder-note" data-fallback>[PLACEHOLDER: Verified phone numbers]</span><a hidden data-content-key="contact.phone" data-content-attr="href" data-prefix="tel:"></a></dd></div>
-          <div><dt>Email</dt><dd><span class="placeholder-note" data-fallback>[PLACEHOLDER: Verified email]</span><a hidden data-content-key="contact.email" data-content-attr="href" data-prefix="mailto:"></a></dd></div>
-          <div><dt>Social</dt><dd><span class="placeholder-note" data-fallback>[PLACEHOLDER: Verified social media link]</span><a hidden data-content-key="contact.facebook" data-content-attr="href" rel="noopener noreferrer" target="_blank"></a></dd></div>
-        </dl>
+        <div class="contact-card-grid">
+          <article class="contact-card reveal">
+            <span class="contact-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"></path><circle cx="12" cy="10" r="2.5"></circle></svg></span>
+            <div class="contact-card-content"><h2>Address</h2><address class="contact-value" data-content-key="contact.address">Negombo - Kurunegala Road, Mirigama 11200, Western Province</address></div>
+          </article>
+          <article class="contact-card reveal" style="--delay:.05s">
+            <span class="contact-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.2 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.96.36 1.9.7 2.8a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.84.58 2.8.7a2 2 0 0 1 1.73 2.03Z"></path></svg></span>
+            <div class="contact-card-content"><h2>Phone</h2><a class="contact-value" href="tel:+94332273254" data-content-key="contact.phone" data-content-attr="href" data-prefix="tel:">+94 33 227 3254 / +94 33 227 3420</a></div>
+          </article>
+          <article class="contact-card reveal" style="--delay:.1s">
+            <span class="contact-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m3 7 9 6 9-6"></path></svg></span>
+            <div class="contact-card-content"><h2>Email</h2><a class="contact-value" href="mailto:info@dssenanayake.sch.lk" data-content-key="contact.email" data-content-attr="href" data-prefix="mailto:">info@dssenanayake.sch.lk</a></div>
+          </article>
+          <article class="contact-card reveal" style="--delay:.15s">
+            <span class="contact-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="m8.7 10.7 6.6-4.4m-6.6 7 6.6 4.4"></path></svg></span>
+            <div class="contact-card-content"><h2>Social media</h2><span class="contact-fallback" data-fallback>Follow the school for news and updates.</span><a class="contact-value" hidden data-content-key="contact.facebook" data-content-attr="href" data-content-label="Visit our social media page" rel="noopener noreferrer" target="_blank"></a></div>
+          </article>
+        </div>
         <div class="map-frame reveal" style="--delay:.1s">
-          <span class="placeholder-note" data-fallback>[PLACEHOLDER: Google Maps embed link, added in the dashboard]</span>
+          <span class="contact-map-fallback" data-fallback>Location map is not currently available.</span>
           <iframe hidden title="Map showing the school location" loading="lazy" referrerpolicy="no-referrer-when-downgrade" data-content-key="contact.map_url" data-content-attr="src"></iframe>
         </div>
       </div>
@@ -791,7 +831,7 @@ dialog.lightbox::backdrop { background: rgba(2, 11, 8, 0.88); }
         <div>
           <h2>D.S. Senanayake Central College</h2>
           <p>Mirigama</p>
-          <p class="content-text" data-content-key="contact.address"><span class="placeholder-note">[PLACEHOLDER: Verified address]</span></p>
+          <p>Official website of D.S. Senanayake Central College.</p>
         </div>
         <nav aria-label="Footer">
           <h2>Explore</h2>
@@ -805,10 +845,7 @@ dialog.lightbox::backdrop { background: rgba(2, 11, 8, 0.88); }
         </nav>
         <div>
           <h2>Contact</h2>
-          <ul>
-            <li data-content-key="contact.phone"><span class="placeholder-note">[PLACEHOLDER: Verified phone]</span></li>
-            <li data-content-key="contact.email"><span class="placeholder-note">[PLACEHOLDER: Verified email]</span></li>
-          </ul>
+          <p><a href="#contact">See the contact information above</a></p>
         </div>
       </div>
       <div class="footer-bottom">
@@ -948,6 +985,7 @@ window.DSCC_CONFIG = {
       rows.forEach(function (r) { map[r.key] = (r.value || "").trim(); });
       cmsEls.forEach(function (el) {
         var v = map[el.getAttribute("data-content-key")];
+        if (typeof v === "string") v = v.replace(/\[PLACEHOLDER:[^\]]*\]/gi, "").trim();
         if (!v) return;
         var attr = el.getAttribute("data-content-attr");
         var fallback = el.previousElementSibling;
@@ -959,12 +997,11 @@ window.DSCC_CONFIG = {
           }
         } else if (attr === "href") {
           var prefix = el.getAttribute("data-prefix") || "";
-          if (/^\[PLACEHOLDER/i.test(v)) return;          // never turn placeholders into links
           var okLink = prefix ? true : /^https:\/\//i.test(v);
           if (!okLink) return;
           // For several phone numbers, the link dials the first one; all are shown as text
           el.href = prefix + (prefix === "tel:" ? v.split(/[,;\/]/)[0].replace(/[^\d+]/g, "") : v);
-          el.textContent = v; el.hidden = false;
+          el.textContent = el.getAttribute("data-content-label") || v; el.hidden = false;
           if (hasFallback) fallback.hidden = true;
         } else {
           el.textContent = v;
@@ -1043,6 +1080,7 @@ window.DSCC_CONFIG = {
         tile.setAttribute("aria-label", (i.caption || "Gallery item") + (i.media_type === "video" ? " (video)" : ""));
         if (i.media_type !== "video") {
           var im = document.createElement("img");
+          im.className = "card-image-circle";
           im.src = i.image_url; im.alt = ""; im.loading = "lazy";
           tile.appendChild(im);
         } else tile.appendChild(make("span", "badge", "Video"));
