@@ -816,7 +816,7 @@ dialog.lightbox::backdrop { background: rgba(2, 11, 8, 0.88); }
         </div>
         <div class="map-frame reveal" style="--delay:.1s">
           <span class="contact-map-fallback" data-fallback>Location map is not currently available.</span>
-          <iframe hidden title="Map showing the school location" loading="lazy" referrerpolicy="no-referrer-when-downgrade" data-content-key="contact.map_url" data-content-attr="src"></iframe>
+          <iframe hidden title="Map showing the school location" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" data-content-key="contact.map_url" data-content-attr="src"></iframe>
         </div>
       </div>
     </section>
@@ -979,6 +979,35 @@ window.DSCC_CONFIG = {
    * Elements with data-content-key get their text from the page_content table.
    * Links only accept safe schemes (tel:, mailto:, https:). Maps only accept Google Maps embeds. */
   var cmsEls = document.querySelectorAll("[data-content-key]");
+  function googleMapsEmbedUrl(value) {
+    var source = String(value || "").trim();
+    if (!source) return "";
+    if (source.indexOf("<") !== -1) {
+      var doc = new DOMParser().parseFromString(source, "text/html");
+      var iframe = doc.querySelector("iframe[src]");
+      if (!iframe) return "";
+      source = iframe.getAttribute("src") || "";
+    }
+    source = source.replace(/&amp;/gi, "&").trim();
+    var mapUrl;
+    try { mapUrl = new URL(source); } catch (error) { return ""; }
+    if (mapUrl.protocol !== "https:" || !/^(www\.google\.com|google\.com|maps\.google\.com)$/i.test(mapUrl.hostname)) return "";
+    if (/^\/maps\/embed(?:\/|$)/i.test(mapUrl.pathname)) return mapUrl.href;
+    if (!/^\/maps(?:\/|$)/i.test(mapUrl.pathname)) return "";
+    if (mapUrl.searchParams.get("output") === "embed") return mapUrl.href;
+    var query = mapUrl.searchParams.get("q") || mapUrl.searchParams.get("query");
+    if (!query) {
+      var place = mapUrl.pathname.match(/^\/maps\/(?:place|search)\/([^/]+)/i);
+      if (place) {
+        try { query = decodeURIComponent(place[1].replace(/\+/g, " ")); } catch (error) { return ""; }
+      }
+    }
+    if (!query) return "";
+    var embedUrl = new URL("https://www.google.com/maps");
+    embedUrl.searchParams.set("q", query);
+    embedUrl.searchParams.set("output", "embed");
+    return embedUrl.href;
+  }
   if (configured && cmsEls.length) {
     api("page_content?select=key,value").then(function (rows) {
       var map = {};
@@ -986,16 +1015,21 @@ window.DSCC_CONFIG = {
       cmsEls.forEach(function (el) {
         var v = map[el.getAttribute("data-content-key")];
         if (typeof v === "string") v = v.replace(/\[PLACEHOLDER:[^\]]*\]/gi, "").trim();
-        if (!v) return;
         var attr = el.getAttribute("data-content-attr");
         var fallback = el.previousElementSibling;
         var hasFallback = fallback && fallback.hasAttribute("data-fallback");
         if (attr === "src") {
-          if (/^https:\/\/www\.google\.com\/maps\/embed/i.test(v)) {
-            el.src = v; el.hidden = false;
+          var src = googleMapsEmbedUrl(v);
+          if (src) {
+            el.src = src; el.hidden = false;
             if (hasFallback) fallback.hidden = true;
+          } else {
+            el.removeAttribute("src");
+            el.hidden = true;
+            if (hasFallback) fallback.hidden = false;
           }
         } else if (attr === "href") {
+          if (!v) return;
           var prefix = el.getAttribute("data-prefix") || "";
           var okLink = prefix ? true : /^https:\/\//i.test(v);
           if (!okLink) return;
@@ -1004,6 +1038,7 @@ window.DSCC_CONFIG = {
           el.textContent = el.getAttribute("data-content-label") || v; el.hidden = false;
           if (hasFallback) fallback.hidden = true;
         } else {
+          if (!v) return;
           el.textContent = v;
         }
       });

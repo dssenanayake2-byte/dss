@@ -180,22 +180,57 @@
     if (row && typeof row.key === "string" && typeof row.value === "string") localCms[row.key] = row.value.trim();
   });
 
-  function applyCmsMap(map, protectedKeys) {
+  function googleMapsEmbedUrl(value) {
+    var source = String(value || "").trim();
+    if (!source) return "";
+    if (source.indexOf("<") !== -1) {
+      var doc = new DOMParser().parseFromString(source, "text/html");
+      var iframe = doc.querySelector("iframe[src]");
+      if (!iframe) return "";
+      source = iframe.getAttribute("src") || "";
+    }
+    source = source.replace(/&amp;/gi, "&").trim();
+    var mapUrl;
+    try { mapUrl = new URL(source); } catch (error) { return ""; }
+    if (mapUrl.protocol !== "https:" || !/^(www\.google\.com|google\.com|maps\.google\.com)$/i.test(mapUrl.hostname)) return "";
+    if (/^\/maps\/embed(?:\/|$)/i.test(mapUrl.pathname)) return mapUrl.href;
+    if (!/^\/maps(?:\/|$)/i.test(mapUrl.pathname)) return "";
+    if (mapUrl.searchParams.get("output") === "embed") return mapUrl.href;
+
+    var query = mapUrl.searchParams.get("q") || mapUrl.searchParams.get("query");
+    if (!query) {
+      var place = mapUrl.pathname.match(/^\/maps\/(?:place|search)\/([^/]+)/i);
+      if (place) {
+        try { query = decodeURIComponent(place[1].replace(/\+/g, " ")); } catch (error) { return ""; }
+      }
+    }
+    if (!query) return "";
+    var embedUrl = new URL("https://www.google.com/maps");
+    embedUrl.searchParams.set("q", query);
+    embedUrl.searchParams.set("output", "embed");
+    return embedUrl.href;
+  }
+
+  function applyCmsMap(map) {
     cmsEls.forEach(function (el) {
       var key = el.getAttribute("data-content-key");
-      if (protectedKeys && Object.prototype.hasOwnProperty.call(protectedKeys, key)) return;
       var v = map[key];
       if (typeof v === "string") v = v.replace(/\[PLACEHOLDER:[^\]]*\]/gi, "").trim();
-      if (!v) return;
       var attr = el.getAttribute("data-content-attr");
       var fallback = el.previousElementSibling;
       var hasFallback = fallback && fallback.hasAttribute("data-fallback");
       if (attr === "src") {
-        if (/^https:\/\/www\.google\.com\/maps\/embed/i.test(v)) {
-          el.src = v; el.hidden = false;
+        var src = googleMapsEmbedUrl(v);
+        if (src) {
+          el.src = src; el.hidden = false;
           if (hasFallback) fallback.hidden = true;
+        } else {
+          el.removeAttribute("src");
+          el.hidden = true;
+          if (hasFallback) fallback.hidden = false;
         }
       } else if (attr === "href") {
+        if (!v) return;
         var prefix = el.getAttribute("data-prefix") || "";
         var okLink = prefix ? true : /^https:\/\//i.test(v);
         if (!okLink) return;
@@ -203,6 +238,7 @@
         el.textContent = el.getAttribute("data-content-label") || v; el.hidden = false;
         if (hasFallback) fallback.hidden = true;
       } else {
+        if (!v) return;
         el.textContent = v;
       }
     });
@@ -214,7 +250,7 @@
       api("page_content?select=key,value").then(function (rows) {
         var map = {};
         rows.forEach(function (r) { map[r.key] = (r.value || "").trim(); });
-        applyCmsMap(map, localCms);
+        applyCmsMap(map);
       }).catch(function (error) { console.error("Could not load page content from Supabase.", error); });
     }
   }

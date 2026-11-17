@@ -12,6 +12,7 @@
   const $ = (sel, root) => (root || document).querySelector(sel);
   const $$ = (sel, root) => [...(root || document).querySelectorAll(sel)];
   const EDITOR_SESSION_LIMIT = 60 * 60 * 1000;
+  const GALLERY_STORAGE_BUCKET = "gallery";
   const ACADEMIC_SECTIONS = [
     { value: "junior_secondary", label: "Junior Secondary (Grade 6 - 9)" },
     { value: "senior_secondary", label: "Senior Secondary (Grade 10 - 11 / O/L)" },
@@ -23,6 +24,17 @@
     { value: "study_material", label: "Study material" }
   ];
   let currentSession = null;
+
+  function createUploadObjectId() {
+    if (window.crypto && typeof window.crypto.randomUUID === "function") {
+      return window.crypto.randomUUID();
+    }
+    if (window.crypto && typeof window.crypto.getRandomValues === "function") {
+      const bytes = window.crypto.getRandomValues(new Uint8Array(16));
+      return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+    }
+    throw new Error("Secure random IDs are unavailable. Open the admin panel over HTTPS and try again.");
+  }
 
   /* ---------- DOM Creation Helper ---------- */
   function h(tag, props, ...kids) {
@@ -1605,12 +1617,18 @@
       const addr = h("input", { id: "co-addr", type: "text", maxlength: "20000", value: readValue("contact.address", "Negombo - Kurunegala Road, Mirigama 11200, Western Province, Sri Lanka") });
       const phone = h("input", { id: "co-phone", type: "text", maxlength: "20000", value: readValue("contact.phone", "+94 33 227 3254 / +94 33 227 3420") });
       const email = h("input", { id: "co-email", type: "email", maxlength: "20000", value: readValue("contact.email", "info@dssenanayake.sch.lk") });
+      const mapUrl = h("textarea", { id: "co-map-url", rows: 4, maxlength: "20000", value: readValue("contact.map_url", "") });
 
       const form = h("form", { class: "panel" },
         h("h2", { text: "Official Public Channels" }),
         h("div", { class: "field" }, h("label", { for: "co-addr", text: "College Physical Address" }), addr),
         h("div", { class: "field" }, h("label", { for: "co-phone", text: "Administrative Phone Lines" }), phone),
         h("div", { class: "field" }, h("label", { for: "co-email", text: "Official Inquiries Email" }), email),
+        h("div", { class: "field" },
+          h("label", { for: "co-map-url", text: "Google Maps URL or iframe embed code" }),
+          mapUrl,
+          h("p", { class: "hint", text: "Paste the Google Maps embed URL or the full iframe code from Google Maps (Share > Embed a map)." })
+        ),
         h("div", { class: "form-actions" },
           h("button", { class: "btn btn-primary", type: "submit", text: "Update Contact Channels" })
         )
@@ -1621,18 +1639,19 @@
         const values = {
           "contact.address": { page: "contact", label: "Address", value: addr.value.trim() },
           "contact.phone": { page: "contact", label: "Phone", value: phone.value.trim() },
-          "contact.email": { page: "contact", label: "Email", value: email.value.trim() }
+          "contact.email": { page: "contact", label: "Email", value: email.value.trim() },
+          "contact.map_url": { page: "contact", label: "Google Maps embed URL", value: mapUrl.value.trim() }
         };
         const records = getLocal("page_content").filter((item) => !Object.hasOwn(values, item.key));
         Object.entries(values).forEach(([key, fields]) => {
           records.push({ key, ...fields, updated_at: new Date().toISOString() });
         });
         if (!await saveChange("page_content", records, "updated", "Contact details")) return;
-        toast("Contact channels saved.");
+        toast("Contact details and map saved.");
       });
 
       view.replaceChildren(
-        ...heading("Contact Details & Secretariat", "These details appear in the footer and contact pages."),
+        ...heading("Contact Details & Secretariat", "These details appear on the Contact Us page."),
         form
       );
     }
@@ -2176,14 +2195,14 @@
             throw new Error(sb ? "The logo must be 5 MB or smaller." : "Local demo uploads must be 512 KB or smaller. Use an HTTPS image URL for larger logos.");
           }
           if (sb) {
-            uploadedPath = selectors.logoFolder + crypto.randomUUID() + "." + extension;
-            const { error } = await sb.storage.from("gallery").upload(uploadedPath, imageFile, {
+            uploadedPath = selectors.logoFolder + createUploadObjectId() + "." + extension;
+            const { error } = await sb.storage.from(GALLERY_STORAGE_BUCKET).upload(uploadedPath, imageFile, {
               cacheControl: "3600",
               contentType: imageFile.type,
               upsert: false
             });
             if (error) throw error;
-            const { data } = sb.storage.from("gallery").getPublicUrl(uploadedPath);
+            const { data } = sb.storage.from(GALLERY_STORAGE_BUCKET).getPublicUrl(uploadedPath);
             if (!data || !data.publicUrl) throw new Error("Could not create a public URL for the uploaded logo.");
             nextLogoUrl = data.publicUrl;
           } else {
