@@ -5,8 +5,8 @@
  * read and write. NEVER put a service-role key or any password in this file.
  */
 window.DSCC_CONFIG = {
-  supabaseUrl: "",      // [PLACEHOLDER: your Supabase project URL]
-  supabaseAnonKey: "",  // [PLACEHOLDER: your Supabase anon (public) key]
+  supabaseUrl: "https://puhjrybnmaslqvvydtbu.supabase.co",
+  supabaseAnonKey: "sb_publishable_aH71gf2fKmnuFz-2gWoukA_zh9erx08",
   statueImage: "images/statue/statue.webp",
   statueFallback: "images/statue/statue-placeholder.svg"
 };
